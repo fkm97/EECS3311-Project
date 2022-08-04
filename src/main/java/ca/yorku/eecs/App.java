@@ -12,6 +12,7 @@ import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpExchange;
 
 public class App 
 {
@@ -33,10 +34,27 @@ public class App
     	driver = GraphDatabase.driver(uriDb, AuthTokens.basic("neo4j", "123456"), config);
     }
     
+	public void handle(HttpExchange request) throws IOException {
+		// TODO Auto-generated method stub
+		
+		try {
+			if (request.getRequestMethod().equals("GET") && request.getRequestURI().getPath() == "/api/v1/addActor") {
+				
+			} else {
+				
+			}
+		} 
+		catch (Exception e) {
+			
+		}
+		
+	}
+    
+    
     
     public void addActor(String name, String actorId) {
     	try (Session session = driver.session()) {
-			session.writeTransaction(tx -> tx.run("CREATE (a:Actor {name: $x, actorId: $y})", 
+			session.writeTransaction(tx -> tx.run("MERGE (a:Actor {name: $x, actorId: $y})", 
 					parameters("x", name, "y", actorId)));
     	}
     }
