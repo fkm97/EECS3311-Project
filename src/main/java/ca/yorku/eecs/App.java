@@ -24,6 +24,8 @@ public class App
     public static void main(String[] args) throws IOException
     {
         HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", PORT), 0);
+        Adder adder = new Adder();
+	    server.createContext("/", adder::handle);
         server.start();
         System.out.printf("Server started on port %d...\n", PORT);
     }
@@ -32,32 +34,46 @@ public class App
     	uriDb = "bolt://localhost:7687";
     	Config config = Config.builder().withoutEncryption().build();
     	driver = GraphDatabase.driver(uriDb, AuthTokens.basic("neo4j", "123456"), config);
+//    	try {
+//			handle(r);
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
     }
     
-	public void handle(HttpExchange request) throws IOException {
-		// TODO Auto-generated method stub
-		
-		try {
-			if (request.getRequestMethod().equals("GET") && request.getRequestURI().getPath() == "/api/v1/addActor") {
-				
-			} else {
-				
-			}
-		} 
-		catch (Exception e) {
-			
-		}
-		
-	}
+//	public void handle(HttpExchange request) throws IOException {
+//		// TODO Auto-generated method stub
+//		
+//		try {
+//			if (request.getRequestMethod().equals("PUT")) {
+//				switch(request.getRequestURI().getPath()) {
+//				case "/api/v1":
+////					request.getRequestBody().
+//					System.out.println(request.getRequestMethod());
+//					System.out.println(request.getRequestURI());
+//					String x = Utils.getBody(request);
+//					System.out.println(x);
+//					break;
+//				}
+//			} else {
+//				
+//			}
+//		} 
+//		catch (Exception e) {
+//			
+//		}
+//		
+//	}
     
     
     
-    public void addActor(String name, String actorId) {
-    	try (Session session = driver.session()) {
-			session.writeTransaction(tx -> tx.run("MERGE (a:Actor {name: $x, actorId: $y})", 
-					parameters("x", name, "y", actorId)));
-    	}
-    }
+//    public void addActor(String name, String actorId) {
+//    	try (Session session = driver.session()) {
+//			session.writeTransaction(tx -> tx.run("MERGE (a:Actor {name: $x, actorId: $y})", 
+//					parameters("x", name, "y", actorId)));
+//    	}
+//    }
     
     public void close() {
     	driver.close();
