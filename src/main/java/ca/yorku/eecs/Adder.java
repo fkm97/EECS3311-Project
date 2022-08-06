@@ -40,9 +40,7 @@ public class Adder {
 					int ii = nameActor.indexOf("\"");
 					String movieActorFinal = nameActor.substring(0, ii);
 					
-					
-					sendString(request, response, 200);
-					
+										
 					System.out.println(movieActorFinal);
 					
 					String nameID = s1[2].substring(16);
@@ -62,26 +60,82 @@ public class Adder {
 					System.out.println(request.getRequestURI());
 					String y = Utils.getBody(request);
 					String[] m1 = y.split("\n");
+					if (m1.length < 4) {
+						sendString(request, badResponse, 400);
+					}
 					String nameMov = m1[1].substring(13);		
 					int i = nameMov.indexOf("\"");
 					String movieNameFinal = nameMov.substring(0, i);
 					
 					System.out.println(movieNameFinal);
-					
-					String movieID = m1[2].substring(16);
-					if (movieID == null) {
+					if (m1[2].length() <= 16) {
 						sendString(request, badResponse, 400);
 					}
-					int jj = movieID.indexOf("\"");
-					String movieIDFinal = movieID.substring(0, jj);
-					System.out.println(movieIDFinal);
+					else {
+						String movieID = m1[2].substring(16);
+						System.out.println("movieID" + movieID);
+//						if (movieID == null) {
+//							sendString(request, badResponse, 400);
+//						}
+						
+						int jj = movieID.indexOf("\"");
+						String movieIDFinal = movieID.substring(0, jj);
+						System.out.println(movieIDFinal);
+						
+						neo4j.addMovie(movieNameFinal, movieIDFinal);
+						
+						sendString(request, response, 200);
+					}
+				case "/api/v1/addRelationship":
+					System.out.println(request.getRequestMethod());
+					System.out.println(request.getRequestURI());
+					String z = Utils.getBody(request);
+					System.out.println(z);
+					String[] r1 = z.split("\n");
+					String firstID = r1[1].substring(16);		
+					int iii = firstID.indexOf("\"");
+					String firstIDFinal = firstID.substring(0, iii);
 					
-					neo4j.addMovie(movieNameFinal, movieIDFinal);
+										
+					System.out.println(firstIDFinal);
+					
+					String secondID = r1[2].substring(16);
+					int jjj = secondID.indexOf("\"");
+					String secondIDFinal = secondID.substring(0, jjj);
+					System.out.println(secondIDFinal);
+					
+					neo4j.addRelationship(firstIDFinal, secondIDFinal);
 					
 					sendString(request, response, 200);
 					
+					
 				}
-			} else {
+			} 
+			
+			
+			if (request.getRequestMethod().equals("GET")) {
+				switch(request.getRequestURI().getPath()) {
+				
+				case "/api/v1/getActor":
+					System.out.println(request.getRequestMethod());
+					System.out.println(request.getRequestURI());
+					String a = Utils.getBody(request);
+					System.out.println(a);
+					String[] g1 = a.split("\n");
+					String ID = g1[1].substring(16);
+					int i3 = ID.indexOf("\"");
+					String IDFinal = ID.substring(0, i3);
+					
+					System.out.println(IDFinal);
+					
+					String n = neo4j.getActor(IDFinal);
+					System.out.println("kadkakwn" + n);
+				
+				}
+				
+			}
+			
+			else {
 				
 			}
 		} 
