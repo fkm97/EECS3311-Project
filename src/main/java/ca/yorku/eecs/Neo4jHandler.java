@@ -4,12 +4,14 @@ import static org.neo4j.driver.v1.Values.parameters;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
@@ -32,31 +34,110 @@ public class Neo4jHandler {
 
 
 
-    public void addActor(String name, String actorId) {
-    	try (Session session = driver.session()) {
-			session.writeTransaction(tx -> tx.run("MERGE (a:Actor {name: $x, actorId: $y})", 
-					parameters("x", name, "y", actorId)));
-    	}
-    }
-    
-    public void addMovie(String name, String movieId) {
-    	try (Session session = driver.session()) {
-			session.writeTransaction(tx -> tx.run("MERGE (m:Movie {name: $x, movieId: $y})", 
-					parameters("x", name, "y", movieId)));
-    	}
-    }
-    
-    public void addRelationship(String actorId, String movieId) {
+    public int addActor(String name, String actorId) {
     	try (Session session = driver.session()) {
     		
+    		if (actorInData(actorId)) {
+    			return 400;
+    		}
+    		
+    		else {
+    		
+			session.writeTransaction(tx -> tx.run("MERGE (a:Actor {name: $x, actorId: $y})", 
+					parameters("x", name, "y", actorId)));
+			return 200;
+    		}
+    	}
+    	
+    	catch (Exception e) {
+    		e.printStackTrace();
+    		return 500;
+    	}
+    }
+    
+    public boolean actorInData(String id) {
+        try(Session session = driver.session()){
+            Transaction tx = session.beginTransaction();
+            String query = "MATCH (a: Actor) WHERE a.actorId = '%s' RETURN a".formatted(id);
+            StatementResult result = tx.run(query);
+            Boolean isInData = result.hasNext();
+            return isInData;
+        }
+    }
+    
+    public int addMovie(String name, String movieId) {
+    	    	
+    	try (Session session = driver.session()) {
+    		
+    		if (movieInData(movieId)) {
+    			return 400;
+    		}
+    		
+    		else {
+    			
+			session.writeTransaction(tx -> tx.run("MERGE (m:Movie {name: $x, movieId: $y})", 
+					parameters("x", name, "y", movieId)));
+			return 200;
+    	}
+		}
+    	
+    	catch (Exception e) {
+    		e.printStackTrace();
+    		return 500;
+    	}
+		
+		
+    }
+    
+    public boolean movieInData(String id) {
+        try(Session session = driver.session()){
+            Transaction tx = session.beginTransaction();
+            String query = "MATCH (m: Movie) WHERE m.movieId = '%s' RETURN m".formatted(id);
+            StatementResult result = tx.run(query);
+            Boolean isInData = result.hasNext();
+            return isInData;
+        }
+    }
+    
+    public int addRelationship(String actorId, String movieId) {
+    	try (Session session = driver.session()) {
+    		
+    		if (!actorInData(actorId) || !movieInData(movieId)) {
+    			return 404;
+    		}
+    		
+    		else {
+    			if (hasRelationship(movieId, actorId)) {
+    				return 400;
+    			}
+    		
+    			else {
+    			
 			session.writeTransaction(tx -> tx.run("MATCH (a:Actor), (m:Movie)  WHERE a.actorId = $x AND m.movieId = $y  CREATE (a)-[r:ACTED_IN]->(m)  RETURN type(r)", parameters("x", actorId, "y", movieId)));
     		
 //			session.writeTransaction(tx -> tx.run("MATCH (a:Actor),(m:Movie)\n" + 
 //					"WHERE a.actorID = $x AND m.movieID = $y" +
 //					 "CREATE (a)-[r:ACTED_IN]->(m)\n" + 
 //					 "RETURN type(r)", parameters("x", actorId, "y", movieId)));
-			session.close();    	
+			session.close();   
+			return 200;
+    			}
+    		}
 			}
+    	catch (Exception e) {
+    		e.printStackTrace();
+    		return 500;
+    	}
+    }
+    
+    public boolean hasRelationship(String movieId, String actorId) {
+        try(Session session = driver.session()){
+            Transaction tx = session.beginTransaction();
+            String query = "RETURN EXISTS((:Actor{actorId:'%s'})-[:ACTED_IN]-(:Movie{movieId:'%s'}))".formatted(actorId, movieId);
+            StatementResult result = tx.run(query);
+            Boolean relationship = result.next().values().get(0).asBoolean();
+            return relationship;
+        }
     }
     
 //    public void getActor(String Id) {
@@ -98,32 +179,52 @@ public class Neo4jHandler {
 //            return "";
 //        }
 //        else {
-            try(Session session = driver.session()){
-                Transaction tx = session.beginTransaction();
-                String query = "MATCH (a: Actor) WHERE a.actorId = '%s' RETURN a.name".formatted(actorId);
-                StatementResult result = tx.run(query);
-                String name = result.next().values().get(0).asString();
-                
-                return name;
-            }
-            catch(Exception e) {
-                e.printStackTrace();
-                return "error";
-            }
+//            try(Session session = driver.session()){
+//                Transaction tx = session.beginTransaction();
+//                String query = "MATCH (a: Actor) WHERE a.actorId = '%s' RETURN a.name".formatted(actorId);
+//                StatementResult result = tx.run(query);
+//                String name = result.next().values().get(0).asString();
+//                
+//                return name;
+//            }
+//            catch(Exception e) {
+//                e.printStackTrace();
+//                return "error";
+//            }
         //}
-    }
-    
-    public int addMovie2(String name, String id) {
-    	try (Session session = driver.session()) {
-    		Transaction tx = session.beginTransaction();
-    	     String query = "CREATE (m: Movie {name:'%s', movieId:'%s'})".formatted(name, id);
-             tx.run(query);
-             return 200;
-    		
+    	
+    	if (!actorInData(actorId)) {
+    		return "";
+    	}
+    	else {
+    	
+        try(Session session = driver.session()){
+            Transaction tx = session.beginTransaction();
+            String query = "MATCH (a: Actor) WHERE a.actorId = '%s' RETURN a.name".formatted(actorId);
+            StatementResult result = tx.run(query);
+            String name = result.next().values().get(0).asString();
+            return name;
     	}
     	catch(Exception e) {
     		e.printStackTrace();
-    		return 500;
+    		return "error";
+    	}
     	}
     }
+    
+    public List<String> getMoviesActedIn(String actorId) {
+        try(Session session = driver.session()){
+            Transaction tx = session.beginTransaction();
+            String query = "MATCH (a {actorId: '%s'})-[:ACTED_IN]->(b) RETURN b".formatted(actorId);
+            StatementResult result = tx.run(query);
+            List<String> movies = new ArrayList<>();
+            while(result.hasNext()) {
+                Record row = result.next();
+                String movie = row.values().get(0).get("movieId").toString();
+                movies.add(movie);
+            }
+            return movies;
+        }
+    }
+    
 }
