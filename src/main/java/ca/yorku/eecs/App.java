@@ -14,25 +14,23 @@ import org.neo4j.driver.v1.Session;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
 
-public class App 
-{
-	
+public class App {
+
 	private Driver driver;
 	private String uriDb;
-	
-    static int PORT = 8080;
-    public static void main(String[] args) throws IOException
-    {
-        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", PORT), 0);
-        RESTHandler rest = new RESTHandler();
-	    server.createContext("/", rest::handle);
-        server.start();
-        System.out.printf("Server started on port %d...\n", PORT);
-    }
-    
-    
-    public void close() {
-    	driver.close();
-    }
-    
+
+	static int PORT = 8080;
+
+	public static void main(String[] args) throws IOException {
+		HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", PORT), 0);
+		RESTHandler rest = new RESTHandler();
+		server.createContext("/", rest::handle);
+		server.start();
+		System.out.printf("Server started on port %d...\n", PORT);
+	}
+
+	public void close() {
+		driver.close();
+	}
+
 }
