@@ -113,10 +113,7 @@ public class Neo4jHandler {
 							"MATCH (a:Actor), (m:Movie)  WHERE a.actorId = $x AND m.movieId = $y  CREATE (a)-[r:ACTED_IN]->(m)  RETURN type(r)",
 							parameters("x", actorId, "y", movieId)));
 
-//			session.writeTransaction(tx -> tx.run("MATCH (a:Actor),(m:Movie)\n" + 
-//					"WHERE a.actorID = $x AND m.movieID = $y" +
-//					 "CREATE (a)-[r:ACTED_IN]->(m)\n" + 
-//					 "RETURN type(r)", parameters("x", actorId, "y", movieId)));
+
 					session.close();
 					return 200;
 				}
@@ -138,58 +135,8 @@ public class Neo4jHandler {
 		}
 	}
 
-//    public void getActor(String Id) {
-//    	try (Session session = driver.session()) {
-////    		session.writeTransaction(tx -> tx.run("MATCH (a:Actor) WHERE a.actorId = $x RETURN a", parameters("x", Id)));
-//         	try (Transaction tx = session.beginTransaction()) {
-//        		StatementResult result = tx.run("MATCH (a:Actor) WHERE a.actorId = $x RETURN a", parameters("x", Id));
-//        		System.out.println(result.summary());
-////        		if (result.hasNext()) {
-////        			System.out.println(" ID is " + Id);
-////        			System.out.println(result.toString());
-////        		}
-//        		
-//        		while ( result.hasNext() )
-//        		{
-//        		    org.neo4j.driver.v1.Record res = result.next();
-//
-//        		    System.err.println(" --> "+res.get(0) ); 
-//        		    
-//        		    List<Pair<String,Value>> values = res.fields();
-//            		for (Pair<String,Value> nameValue: values) {
-//            			Value value = nameValue.value();
-//        		        
-//        		        String ai = value.get("actorId").asString();
-//        		        String n = value.get("name").asString();
-//        		        
-//        		        System.out.println(ai + ", " + n);
-//            		}
-//        		}  
-//    		session.close();
-//         	}
-//    	}
-//	
-//    }
 
 	public String getActor(String actorId) {
-		// if an actor with the given actorId DNE, return an empty string
-//        if(!actorPresent(actorId)) {
-//            return "";
-//        }
-//        else {
-//            try(Session session = driver.session()){
-//                Transaction tx = session.beginTransaction();
-//                String query = "MATCH (a: Actor) WHERE a.actorId = '%s' RETURN a.name".formatted(actorId);
-//                StatementResult result = tx.run(query);
-//                String name = result.next().values().get(0).asString();
-//                
-//                return name;
-//            }
-//            catch(Exception e) {
-//                e.printStackTrace();
-//                return "error";
-//            }
-		// }
 
 		if (!actorInData(actorId)) {
 			return "";
@@ -222,5 +169,62 @@ public class Neo4jHandler {
 			return movies;
 		}
 	}
+	
+	public String getMovie(String movieId) {
+		
+		if(!movieInData(movieId)) {
+			return "";
+		} else {
+			
+			try (Session session = driver.session()) {
+				Transaction tx = session.beginTransaction();
+				String query = "MATCH (m: Movie) WHERE m.movieId = '%s' RETURN m".formatted(movieId);
+				StatementResult result = tx.run(query);
+				String name = result.next().values().get(0).asString();
+				return name;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "error";
+		}
+	}
+}
+	
+	public List<String> getActorsinMovie(String movieId) {
+		try (Session session = driver.session()) {
+			Transaction tx = session.beginTransaction();
+			String query = "MATCH (m {movieId: '%s'})<-[:ACTED_IN]-(b) RETURN b".formatted(movieId);
+			StatementResult result = tx.run(query);
+			List<String> actors = new ArrayList<>();
+			while (result.hasNext()) {
+				Record row = result.next();
+				String actor = row.values().get(0).get("actorId").toString();
+				actors.add(actor);
+			}
+			return actors;
+			}
+	}
+
+	public int checkRelationship(String MovieId, String ActorId) {
+		 try {
+	            if(!movieInData(MovieId) || !actorInData(ActorId)) {
+	                return 404;
+	            }
+	            else {
+	                if(hasRelationship(MovieId, ActorId)) {
+	                    return 200;
+	                }
+	                else {
+	                    return 201;
+	                }
+	            }
+	        }
+	        catch(Exception e){
+	            e.printStackTrace();
+	            return 500;
+	        }	}
+	
+
+
+
 
 }

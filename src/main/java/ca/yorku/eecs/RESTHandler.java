@@ -11,19 +11,9 @@ import com.sun.net.httpserver.HttpExchange;
 public class RESTHandler {
 
 	Neo4jHandler neo4j = new Neo4jHandler();
-//	String response = "For a successful add";
-//	String badResponse = "Improper Format";
 
-//	private void sendString(HttpExchange request, String data, int restCode) 
-//			throws IOException {
-//		request.sendResponseHeaders(restCode, data.length());
-//        OutputStream os = request.getResponseBody();
-//        os.write(data.getBytes());
-//        os.close();
-//	}
 
 	public void handle(HttpExchange request) throws IOException {
-		// TODO Auto-generated method stub
 
 		try {
 			if (request.getRequestMethod().equals("PUT")) {
@@ -32,24 +22,7 @@ public class RESTHandler {
 				case "/api/v1/addActor":
 					System.out.println(request.getRequestMethod());
 					System.out.println(request.getRequestURI());
-//					String x = Utils.getBody(request);
-//					System.out.println(x);
-//					String[] s1 = x.split("\n");
-//					String nameActor = s1[1].substring(13);		
-//					int ii = nameActor.indexOf("\"");
-//					String movieActorFinal = nameActor.substring(0, ii);
-//					
-//										
-//					System.out.println(movieActorFinal);
-//					
-//					String nameID = s1[2].substring(16);
-//					int j = nameID.indexOf("\"");
-//					String nameIDFinal = nameID.substring(0, j);
-//					System.out.println(nameIDFinal);
-//					
-//					neo4j.addActor(movieActorFinal, nameIDFinal);
-//					
-//					sendString(request, response, 200);
+
 
 					String addActorBody = Utils.getBody(request);
 					JSONObject addActorJSON = new JSONObject(addActorBody);
@@ -130,23 +103,6 @@ public class RESTHandler {
 					} else {
 						request.sendResponseHeaders(addRelationshipStatus, -1);
 					}
-//					System.out.println(z);
-//					String[] r1 = z.split("\n");
-//					String firstID = r1[1].substring(16);		
-//					int iii = firstID.indexOf("\"");
-//					String firstIDFinal = firstID.substring(0, iii);
-//					
-//										
-//					System.out.println(firstIDFinal);
-//					
-//					String secondID = r1[2].substring(16);
-//					int jjj = secondID.indexOf("\"");
-//					String secondIDFinal = secondID.substring(0, jjj);
-//					System.out.println(secondIDFinal);
-//					
-//					neo4j.addRelationship(firstIDFinal, secondIDFinal);
-//					
-//					sendString(request, response, 200);
 
 					break;
 
@@ -188,17 +144,84 @@ public class RESTHandler {
 						os.write(getActorResult.toString().getBytes());
 						os.close();
 					}
-//					System.out.println(a);
-//					String[] g1 = a.split("\n");
-//					String ID = g1[1].substring(16);
-//					int i3 = ID.indexOf("\"");
-//					String IDFinal = ID.substring(0, i3);
-//					
-//					System.out.println(IDFinal);
-//					
-//					String n = neo4j.getActor(IDFinal);
-//					System.out.println("kadkakwn" + n);
 
+					break;
+					
+				case "/api/v1/getMovie":
+					System.out.println(request.getRequestMethod());
+					System.out.println(request.getRequestURI());
+
+					String getMovieBody = Utils.getBody(request);
+					JSONObject getMovieJSON = new JSONObject(getMovieBody);
+
+					String getMovieId, movieName;
+
+					if (getMovieJSON.has("movieId")) {
+
+						getMovieId = getMovieJSON.getString("movieId");
+
+						movieName = neo4j.getActor(getMovieId);
+
+						if (movieName.trim().equals("")) {
+							request.sendResponseHeaders(404, -1);
+							return;
+						}
+
+						List<String> moviesActedIn = neo4j.getActorsinMovie(getMovieId);
+						System.out.println("Movies acted in " + moviesActedIn);
+
+						JSONObject getActorResult = new JSONObject().put("movieId", getMovieId).put("name", movieName)
+								.put("movies", moviesActedIn);
+
+						request.sendResponseHeaders(200, getActorResult.toString().length());
+
+						OutputStream os = request.getResponseBody();
+						os.write(getActorResult.toString().getBytes());
+						os.close();
+					}
+
+					break;
+					
+				case "/api/v1/hasRelationship":
+					System.out.println(request.getRequestMethod());
+					System.out.println(request.getRequestURI());
+
+					String hasRelationshipBody = Utils.getBody(request);
+					JSONObject hasRelationshipJSON = new JSONObject(hasRelationshipBody);
+
+					String hasRelationshipActorId, hasRelationshipMovieId;
+					
+					int status = 400;
+
+					if (hasRelationshipJSON.has("movieId") && hasRelationshipJSON.has("actorId")) {
+
+						hasRelationshipMovieId = hasRelationshipJSON.getString("movieId");
+						hasRelationshipActorId = hasRelationshipJSON.getString("actorId");
+						int hasRelationshipStatusCode = neo4j.checkRelationship(hasRelationshipMovieId, hasRelationshipActorId);
+
+						if (hasRelationshipStatusCode == 200) {
+							  JSONObject hasRelationshipJSONBody = new JSONObject().put("actorId", hasRelationshipActorId).put("movieId", hasRelationshipMovieId).put("hasRelationship", true);
+				                request.sendResponseHeaders(hasRelationshipStatusCode, hasRelationshipJSONBody.toString().length());
+				                OutputStream os = request.getResponseBody();
+				                os.write(hasRelationshipJSONBody.toString().getBytes());
+				                os.close();
+						} else if (hasRelationshipStatusCode == 201) {
+							  JSONObject hasRelationshipJSONBody = new JSONObject().put("actorId", hasRelationshipActorId).put("movieId", hasRelationshipMovieId).put("hasRelationship", false);
+				                request.sendResponseHeaders(hasRelationshipStatusCode, hasRelationshipJSONBody.toString().length());
+				                OutputStream os = request.getResponseBody();
+				                os.write(hasRelationshipJSONBody.toString().getBytes());
+				                os.close();
+						}
+						else {
+							request.sendResponseHeaders(hasRelationshipStatusCode, -1);
+						}
+					}
+					
+					else {
+						request.sendResponseHeaders(status, -1);
+					}
+
+					break;
 				}
 
 			}
@@ -206,6 +229,7 @@ public class RESTHandler {
 			else {
 				request.sendResponseHeaders(400, -1);
 			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
